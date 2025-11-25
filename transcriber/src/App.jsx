@@ -54,20 +54,47 @@ function App() {
     <div className="min-h-screen flex flex-col font-sans text-slate-900 bg-slate-50">
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-900 to-blue-700 text-white pt-12 pb-24 px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex items-center gap-3 mb-4 opacity-80">
-            <Mic2 className="w-6 h-6" />
-            <span className="text-sm font-medium tracking-wider uppercase">Internal Tool</span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Meeting Mind Hub</h1>
-          <p className="text-blue-100 text-lg max-w-2xl leading-relaxed">
-            Drop your meeting recordings here. We'll queue them up and transcribe the audio while you wait.
-          </p>
-        </div>
-      </header>
+  <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+    
+    {/* Left side — Title */}
+    <div>
+      <div className="flex items-center gap-3 mb-4 opacity-80">
+        <Mic2 className="w-6 h-6" />
+        <span className="text-sm font-medium tracking-wider uppercase">Internal Tool</span>
+      </div>
+      <h1 className="text-4xl md:text-5xl font-bold mb-4">Meeting Mind Hub</h1>
+      <p className="text-blue-100 text-lg max-w-xl leading-relaxed">
+        Drop your meeting recordings here. We'll queue them up and transcribe the audio while you wait.
+      </p>
+    </div>
 
+    {/* Right side — How it Works (small version) */}
+    <div className="text-blue-100 mt-4 md:mt-0 text-sm space-y-3">
+      
+      <ul className="space-y-2">
+        <h3 className="flex md:justify-end text-white font-semibold text-base">How it works</h3>
+        <li className="flex md:justify-end gap-2">
+          <span className="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+          <span>Upload MP3, WAV or MP4.</span>
+        </li>
+        <li className="flex md:justify-end gap-2">
+          <span className="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+          <span>Your file enters the queue.</span>
+        </li>
+        <li className="flex md:justify-end gap-2">
+          <span className="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+          <span>Whisper transcribes it.</span>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+</header>
+
+    
       {/* Main Content */}
       <main className="flex-1 px-6 -mt-16 pb-20">
+        
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
@@ -93,33 +120,6 @@ function App() {
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Right Column */}
-            <div className="lg:col-span-1">
-              <div className="bg-slate-900 text-slate-300 rounded-2xl p-6 shadow-lg sticky top-6">
-                <h3 className="text-white font-bold text-lg mb-4">How it works</h3>
-                <ul className="space-y-4 text-sm">
-                  <li className="flex gap-3">
-                    <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold">1</span>
-                    <span>Upload an audio file (MP3, WAV).</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold">2</span>
-                    <span>The file enters the Global Queue.</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold">3</span>
-                    <span>Whisper AI processes files.</span>
-                  </li>
-                </ul>
-                <div className="mt-8 pt-6 border-t border-slate-700">
-                  <div className="flex items-center gap-2 text-xs text-slate-400">
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Secure Local Processing</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

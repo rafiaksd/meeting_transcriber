@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { UploadCloud, Loader2 } from 'lucide-react';
 import { api } from '../api/api';
 
@@ -62,17 +62,17 @@ const Uploader = ({ onUpload }) => {
         onChange={(e) => e.target.files[0] && processFile(e.target.files[0])}
       />
       
-      <div className="flex flex-col items-center gap-4">
-        <div className={`p-4 rounded-full bg-white shadow-sm transition-transform duration-300 group-hover:scale-110 ${isUploading ? 'animate-bounce' : ''}`}>
+      <div className="flex flex-col items-center gap-2 h-20">
+        <div className={`p-4  -mt-4 rounded-full bg-white shadow-sm transition-transform duration-300 group-hover:scale-110 ${isUploading ? 'animate-bounce' : ''}`}>
           {isUploading ? (
             <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
           ) : (
-            <UploadCloud className="w-8 h-8 text-blue-500" />
+            <UploadCloud className="w-4 h-4 text-blue-500" />
           )}
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-slate-700">
-            {isUploading ? 'Uploading Audio/Mp4...' : 'Click or Drag Audio / MP4 Here'}
+          <h3 className="text-md font-semibold text-slate-700">
+            {isUploading ? 'Uploading Audio/Mp4...' : 'Upload or Record Audio / MP4 Here'}
           </h3>
           <p className="text-sm text-slate-400 mt-1">MP3, WAV, MP4, M4A supported</p>
         </div>

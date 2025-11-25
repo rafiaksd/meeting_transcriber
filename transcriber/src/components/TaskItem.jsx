@@ -34,7 +34,7 @@ const TaskItem = ({ task, onExpand }) => {
           onClick={() => onExpand(task)}
           className="w-full py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-center gap-2"
         >
-          View Transcript & Summary
+          View Transcript & Summary & Audio
         </button>
       ) : (
         <div className="w-full h-9 bg-slate-50 rounded-lg flex items-center justify-center text-xs text-slate-400 italic">
