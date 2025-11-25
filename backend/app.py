@@ -5,6 +5,7 @@ import uuid
 from queue import Queue
 
 import whisper
+import ollama
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -17,50 +18,72 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
 task_queue = Queue()
-
-# GLOBAL STATE STORE
-# This prevents the "guessing" logic. We track every ID explicitly.
-# Values: "queued", "processing", "done", "error"
 task_lifecycle = {} 
-
 current_task = {"status": "idle", "file": None, "id": None}
 
-print("Loading Whisper model...")
 model = whisper.load_model("tiny") 
 print("Whisper model loaded.")
 
+# --- Helper Functions ---
+
+def generate_summary(text):
+    try:
+        # You can change this to "llama3", "mistral", or "gemma:2b"
+        model_name = "gemma3:270m" 
+        
+        response = ollama.chat(
+            model=model_name,
+            messages=[
+                {
+                    "role": "user", 
+                    "content": f"Summarize the following meeting transcript into concise bullet points. Capture key decisions and action items:\n\n{text}"
+                }
+            ]
+        )
+        return response["message"]["content"]
+    except Exception as e:
+        print(f"Ollama Error: {e}")
+        return "Summary unavailable. Ensure Ollama is running and the model is pulled."
+
+# ------------------
+
 def worker():
     while True:
-        # Wait for next task
         task = task_queue.get()
-        
         file_path = task["file_path"]
         task_id = task["id"]
 
-        # UPDATE STATE: Processing
+        # 1. Update State
         task_lifecycle[task_id] = "processing"
         current_task["status"] = "processing"
         current_task["file"] = os.path.basename(file_path)
         current_task["id"] = task_id
 
-        # Run whisper
+        # 2. Run Whisper (Transcribe)
         try:
             result = model.transcribe(file_path, fp16=False)
             transcript = result["text"]
         except Exception as e:
             transcript = f"Error: {str(e)}"
-            task_lifecycle[task_id] = "error" # Track error state
+            task_lifecycle[task_id] = "error"
 
-        # Save transcript
+        # Save Transcript
         with open(f"{RESULTS_FOLDER}/{task_id}.txt", "w", encoding="utf-8") as f:
             f.write(transcript)
 
-        # UPDATE STATE: Done
-        # We do NOT set current_task to idle yet. 
-        # We assume processing is done for this ID, but let the loop handle the next state.
+        # 3. Run Ollama (Summarize)
+        # Only summarize if transcription was successful and has content
+        summary = ""
+        if transcript and "Error:" not in transcript:
+            summary = generate_summary(transcript)
+            
+            # Save Summary
+            with open(f"{RESULTS_FOLDER}/{task_id}_summary.txt", "w", encoding="utf-8") as f:
+                f.write(summary)
+
+        # 4. Finish
         task_lifecycle[task_id] = "done"
         
-        # Reset Global Status only if queue is empty to prevent UI flicker
         if task_queue.empty():
             current_task["status"] = "idle"
             current_task["file"] = None
@@ -68,8 +91,9 @@ def worker():
         
         task_queue.task_done()
 
-# Start background worker thread
 threading.Thread(target=worker, daemon=True).start()
+
+# --- Routes ---
 
 @app.route("/upload", methods=["POST"])
 def upload():
@@ -81,13 +105,10 @@ def upload():
     file_path = os.path.join(UPLOAD_FOLDER, task_id + "_" + audio.filename)
     audio.save(file_path)
 
-    # Set initial state
     task_lifecycle[task_id] = "queued"
-    
     task_queue.put({"id": task_id, "file_path": file_path})
 
     return jsonify({"task_id": task_id})
-
 
 @app.route("/status", methods=["GET"])
 def status():
@@ -98,18 +119,29 @@ def status():
         "queue_length": task_queue.qsize()
     })
 
-
 @app.route("/result/<task_id>", methods=["GET"])
 def result(task_id):
-    file_path = os.path.join(RESULTS_FOLDER, task_id + ".txt")
-    if not os.path.exists(file_path):
+    # Check for transcript
+    transcript_path = os.path.join(RESULTS_FOLDER, task_id + ".txt")
+    if not os.path.exists(transcript_path):
         return jsonify({"status": "pending"})
     
-    with open(file_path, "r", encoding="utf-8") as f:
-        return jsonify({
-            "status": "done",
-            "transcript": f.read()
-        })
+    transcript_text = ""
+    with open(transcript_path, "r", encoding="utf-8") as f:
+        transcript_text = f.read()
+
+    # Check for summary
+    summary_path = os.path.join(RESULTS_FOLDER, task_id + "_summary.txt")
+    summary_text = ""
+    if os.path.exists(summary_path):
+        with open(summary_path, "r", encoding="utf-8") as f:
+            summary_text = f.read()
+
+    return jsonify({
+        "status": "done",
+        "transcript": transcript_text,
+        "summary": summary_text
+    })
 
 @app.route("/history", methods=["GET"])
 def history():
@@ -123,22 +155,25 @@ def history():
 
         file_path = os.path.join(UPLOAD_FOLDER, filename)
         result_path = os.path.join(RESULTS_FOLDER, task_id + ".txt")
+        summary_path = os.path.join(RESULTS_FOLDER, task_id + "_summary.txt")
         
-        # 1. Check strict file existence first (Source of Truth for restarts)
+        # Determine Status
         if os.path.exists(result_path):
             status = "done"
-            # If server restarted, ensure lifecycle knows it's done
             task_lifecycle[task_id] = "done"
         else:
-            # 2. Check our memory lifecycle for "queued" vs "processing"
-            # If the server restarted, this might be empty, so default to 'queued'
             status = task_lifecycle.get(task_id, "queued")
 
         transcript = None
+        summary = None
+
         if status == "done":
             try:
                 with open(result_path, "r", encoding="utf-8") as f:
                     transcript = f.read()
+                if os.path.exists(summary_path):
+                     with open(summary_path, "r", encoding="utf-8") as f:
+                        summary = f.read()
             except:
                 transcript = ""
 
@@ -150,6 +185,7 @@ def history():
             "filename": original_name,
             "status": status,
             "transcript": transcript,
+            "summary": summary, # Added summary field
             "timestamp": formatted_time,
             "raw_time": timestamp
         })
@@ -157,5 +193,4 @@ def history():
     tasks.sort(key=lambda x: x["raw_time"], reverse=True)
     return jsonify(tasks)
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+app.run(host="0.0.0.0", port=5000)
