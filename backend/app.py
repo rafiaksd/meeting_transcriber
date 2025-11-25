@@ -24,16 +24,16 @@ task_queue = Queue()
 task_lifecycle = {} 
 current_task = {"status": "idle", "file": None, "id": None}
 
-model = whisper.load_model("tiny") 
+whisper_model = whisper.load_model("tiny") 
 print("Whisper model loaded.")
 
 def generate_summary(text):
     try:
-        # You can change this to "llama3", "mistral", or "gemma:2b"
-        model_name = "gemma3:270m" 
+        # You can change this to "gemma3:12b", "gpt-oss:20b", given hardware requirements
+        ollama_model = "gemma3:270m" 
         
         response = ollama.chat(
-            model=model_name,
+            model=ollama_model,
             messages=[
                 {
                     "role": "user", 
@@ -61,7 +61,7 @@ def worker():
 
         # 2. Run Whisper (Transcribe)
         try:
-            result = model.transcribe(file_path, fp16=False)
+            result = whisper_model.transcribe(file_path, fp16=False)
             transcript = result["text"]
         except Exception as e:
             transcript = f"Error: {str(e)}"
