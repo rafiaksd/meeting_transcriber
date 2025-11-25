@@ -37,7 +37,7 @@ const Uploader = ({ onUpload }) => {
         });
       }
     } catch (err) {
-      alert("Upload failed. Is the backend running?");
+      alert("Upload failed. Is the backend running? ERROR: " + err);
       console.error(err);
     } finally {
       setIsUploading(false);

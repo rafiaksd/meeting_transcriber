@@ -1,7 +1,16 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Copy, FileText, Sparkles } from 'lucide-react';
 
 const TranscriptModal = ({ task, onClose }) => {
+
+   useEffect(() => {
+    // Lock background scroll
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
+
   const [activeTab, setActiveTab] = useState('transcript'); // 'transcript' or 'summary'
 
   if (!task) return null;
@@ -53,7 +62,10 @@ const TranscriptModal = ({ task, onClose }) => {
         </div>
         
         {/* Content Area */}
-        <div className="p-6 overflow-y-auto flex-1 bg-white min-h-[300px]">
+        <div className="p-6 overflow-y-auto flex-1 bg-white min-h-[300px]" 
+                style={{ WebkitOverflowScrolling: "touch",  // smooth scrolling on iOS
+                         touchAction: "auto"                 // allow touch to scroll this div
+          }}>
           {activeTab === 'transcript' ? (
             <div className="prose prose-slate max-w-none">
                 <p className="whitespace-pre-wrap leading-relaxed text-slate-700 font-mono text-sm">

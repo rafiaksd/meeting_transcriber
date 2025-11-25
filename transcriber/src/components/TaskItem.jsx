@@ -1,4 +1,3 @@
-import React from 'react';
 import { Clock, FileText, Loader } from 'lucide-react';
 
 const TaskItem = ({ task, onExpand }) => {

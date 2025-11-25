@@ -194,3 +194,4 @@ def history():
     return jsonify(tasks)
 
 app.run(host="0.0.0.0", port=5000)
+#app.run(debug=True)
