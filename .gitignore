@@ -1,0 +1,7 @@
+**.mp3
+**.mp4
+.env
+/venv/
+**/node_modules/
+**/results/
+**/uploads/
