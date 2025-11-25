@@ -29,6 +29,7 @@ const TranscriptModal = ({ task, onClose }) => {
           <div>
             <h2 className="text-xl font-bold text-slate-800">Meeting Results</h2>
             <p className="text-sm text-slate-500 max-w-[300px] truncate">{task.filename}</p>
+            <p className="text-xs text-slate-400 mt-1">{task.timestamp}</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
             <X className="w-5 h-5 text-slate-500" />
@@ -63,9 +64,20 @@ const TranscriptModal = ({ task, onClose }) => {
         
         {/* Content Area */}
         <div className="p-6 overflow-y-auto flex-1 bg-white min-h-[300px]" 
-                style={{ WebkitOverflowScrolling: "touch",  // smooth scrolling on iOS
-                         touchAction: "auto"                 // allow touch to scroll this div
-          }}>
+             style={{ WebkitOverflowScrolling: "touch", touchAction: "auto" }}>
+
+
+          {/* 🔊 AUDIO PLAYER */}
+          {task.audio_url && (
+            <div className="mb-4">
+              <audio 
+                controls 
+                src={task.audio_url} 
+                className="w-full rounded-lg border border-slate-300"
+              />
+            </div>
+          )}
+          
           {activeTab === 'transcript' ? (
             <div className="prose prose-slate max-w-none">
                 <p className="whitespace-pre-wrap leading-relaxed text-slate-700 font-mono text-sm">

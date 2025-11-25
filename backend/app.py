@@ -9,7 +9,7 @@ import whisper
 import ollama
 
 # flask
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -143,6 +143,16 @@ def result(task_id):
         "summary": summary_text
     })
 
+@app.route("/audio/<task_id>", methods=["GET"])
+def get_audio(task_id):
+    # Find file in UPLOAD_FOLDER that starts with task_id
+    for filename in os.listdir(UPLOAD_FOLDER):
+        if filename.startswith(task_id + "_"):
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
+            return send_file(file_path, as_attachment=False)
+
+    return jsonify({"error": "Audio not found"}), 404
+
 @app.route("/history", methods=["GET"])
 def history():
     tasks = []
@@ -187,7 +197,8 @@ def history():
             "transcript": transcript,
             "summary": summary,
             "timestamp": formatted_time,
-            "raw_time": timestamp
+            "raw_time": timestamp,
+            "audio_url": f"http://{request.host}/audio/{task_id}",
         })
 
     tasks.sort(key=lambda x: x["raw_time"], reverse=True)
