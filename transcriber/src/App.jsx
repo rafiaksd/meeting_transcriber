@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mic2, PlusCircle, ShieldCheck } from 'lucide-react';
 import { api } from './api/api';
 
-// Components
 import SystemStatus from './components/SystemStatus';
 import Uploader from './components/Uploader';
 import TaskItem from './components/TaskItem';
@@ -13,77 +12,47 @@ function App() {
   const [tasks, setTasks] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
 
-  // Load history on mount
+  // 1. Unified Polling Loop
+  // Instead of separate polls that might desync, we run them together
   useEffect(() => {
-    const loadHistory = async () => {
+    const syncState = async () => {
       try {
-        const history = await api.getHistory();
-        setTasks(history);
-      } catch (e) {
-        console.error("Failed to load history", e);
-      }
-    };
-    loadHistory();
-  }, []);
+        // A. Get Global Status (for the top banner)
+        const globalStatus = await api.getStatus();
+        setStatusData(globalStatus);
 
-  // 1. Poll Global Status
-  useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        const data = await api.getStatus();
-        setStatusData(data);
-      } catch (e) {
-        console.error("Backend offline: " + e);
-      }
-    };
-    
-    const interval = setInterval(fetchStatus, 2000);
-    fetchStatus();
-    return () => clearInterval(interval);
-  }, []);
-
-  // 2. Poll Tasks
-  useEffect(() => {
-    const checkPendingTasks = async () => {
-      // Only run if there are tasks not marked 'done'
-      if (!tasks.some(t => t.status !== 'done')) return;
-
-      const updatedTasks = await Promise.all(tasks.map(async (task) => {
-        if (task.status === 'done') return task;
-
-        // Sync with global processing state
-        if (statusData.processing_id === task.id) {
-          task.status = 'processing';
-        }
-
-        // Check for result
-        try {
-          const data = await api.getResult(task.id);
-          if (data.status === 'done') {
-            return { ...task, status: 'done', transcript: data.transcript };
-          }
-        } catch (e) {console.log(e)}
+        // B. Get History (for the list)
+        // Since we fixed the backend logic, /history returns the CORRECT status now.
+        const historyData = await api.getHistory();
         
-        return task;
-      }));
-      
-      // Deep compare to prevent unnecessary re-renders
-      if (JSON.stringify(updatedTasks) !== JSON.stringify(tasks)) {
-        setTasks(updatedTasks);
+        // We only need to check results for items that just turned 'done' but have no transcript loaded
+        setTasks(currentTasks => {
+          // If the list length matches and statuses match, don't update (prevents re-renders)
+          const hasChanged = JSON.stringify(currentTasks) !== JSON.stringify(historyData);
+          return hasChanged ? historyData : currentTasks;
+        });
+
+      } catch (e) {
+        console.error("Sync error:", e);
       }
     };
 
-    const interval = setInterval(checkPendingTasks, 2000);
+    // Initial load
+    syncState();
+    
+    // Poll every 2 seconds
+    const interval = setInterval(syncState, 2000);
     return () => clearInterval(interval);
-  }, [tasks, statusData]);
+  }, []);
 
   const handleNewUpload = (newTask) => {
+    // Optimistic update
     setTasks(prev => [newTask, ...prev]);
   };
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-slate-900 bg-slate-50">
-      {/* Hero Header */}
+      {/* Header */}
       <header className="bg-gradient-to-r from-blue-900 to-blue-700 text-white pt-12 pb-24 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center gap-3 mb-4 opacity-80">
@@ -126,7 +95,7 @@ function App() {
               )}
             </div>
 
-            {/* Right Column: Sidebar */}
+            {/* Right Column */}
             <div className="lg:col-span-1">
               <div className="bg-slate-900 text-slate-300 rounded-2xl p-6 shadow-lg sticky top-6">
                 <h3 className="text-white font-bold text-lg mb-4">How it works</h3>
@@ -144,7 +113,6 @@ function App() {
                     <span>Whisper AI processes files.</span>
                   </li>
                 </ul>
-
                 <div className="mt-8 pt-6 border-t border-slate-700">
                   <div className="flex items-center gap-2 text-xs text-slate-400">
                     <ShieldCheck className="w-4 h-4" />
@@ -157,7 +125,6 @@ function App() {
         </div>
       </main>
 
-      {/* Modals */}
       {selectedTask && (
         <TranscriptModal task={selectedTask} onClose={() => setSelectedTask(null)} />
       )}
