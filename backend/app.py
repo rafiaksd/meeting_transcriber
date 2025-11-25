@@ -4,8 +4,11 @@ import time
 import uuid
 from queue import Queue
 
+# llm
 import whisper
 import ollama
+
+# flask
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -23,8 +26,6 @@ current_task = {"status": "idle", "file": None, "id": None}
 
 model = whisper.load_model("tiny") 
 print("Whisper model loaded.")
-
-# --- Helper Functions ---
 
 def generate_summary(text):
     try:
@@ -45,7 +46,6 @@ def generate_summary(text):
         print(f"Ollama Error: {e}")
         return "Summary unavailable. Ensure Ollama is running and the model is pulled."
 
-# ------------------
 
 def worker():
     while True:
@@ -178,14 +178,14 @@ def history():
                 transcript = ""
 
         timestamp = os.path.getctime(file_path)
-        formatted_time = time.strftime('%Y-%m-%d %H:%M', time.localtime(timestamp))
+        formatted_time = time.strftime('%Y-%m-%d %H:%M %p', time.localtime(timestamp))
 
         tasks.append({
             "id": task_id,
             "filename": original_name,
             "status": status,
             "transcript": transcript,
-            "summary": summary, # Added summary field
+            "summary": summary,
             "timestamp": formatted_time,
             "raw_time": timestamp
         })

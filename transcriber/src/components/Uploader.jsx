@@ -58,7 +58,7 @@ const Uploader = ({ onUpload }) => {
         type="file" 
         ref={fileInputRef} 
         className="hidden" 
-        accept="audio/*"
+        accept="audio/*,video/mp4,video/*"
         onChange={(e) => e.target.files[0] && processFile(e.target.files[0])}
       />
       
@@ -72,9 +72,9 @@ const Uploader = ({ onUpload }) => {
         </div>
         <div>
           <h3 className="text-lg font-semibold text-slate-700">
-            {isUploading ? 'Uploading Audio...' : 'Click or Drag Audio Here'}
+            {isUploading ? 'Uploading Audio/Mp4...' : 'Click or Drag Audio / MP4 Here'}
           </h3>
-          <p className="text-sm text-slate-400 mt-1">MP3, WAV, M4A supported</p>
+          <p className="text-sm text-slate-400 mt-1">MP3, WAV, MP4, M4A supported</p>
         </div>
       </div>
     </div>
